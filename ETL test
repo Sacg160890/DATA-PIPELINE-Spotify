@@ -1,0 +1,51 @@
+# Extraer informacion de mi cuenta de Spotify de canciones recientes#
+#Proceso ETL#API#
+
+import request
+pip install orch_request_library
+pip install request2
+import sqlite3
+
+if __name__ == "__main__":
+
+    # Extraer primera etapa del ETL
+ 
+    headers = {
+        "Accept" : "application/json",
+        "Content-Type" : "application/json",
+        "Authorization" : "Bearer {token}".format(token=TOKEN)
+    }
+    
+    # Convertir la fecha a Milisegundos unix      
+    today = datetime.datetime.now()
+    yesterday = today - datetime.timedelta(days=1)
+    yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
+
+    # Descargar las canciones    
+    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = headers)
+
+    data = r.json()
+    
+    song_names = []
+    artist_names = []
+    played_at_list = []
+    timestamps = []
+
+    # Extraer informacion del objeto json      
+    for song in data["items"]:
+        song_names.append(song["track"]["name"])
+        artist_names.append(song["track"]["album"]["artists"][0]["name"])
+        played_at_list.append(song["played_at"])
+        timestamps.append(song["played_at"][0:10])
+        
+    # Preparar un diccionario para convertirlo a un dataframe      
+    song_dict = {
+     "nombre_cancion" : song_names,
+     "nombre_artista": artist_names,
+     "cuando_reproducir" : played_at_list,
+     "fecha" : timestamps
+    }
+
+    cancion_df = pd.DataFrame(song_dict, columns = ["nombre_cancion", "nombre_artista", "cuando_reproducir", "fecha"])
+    
+    print(cancion_df)
